@@ -31,7 +31,7 @@ export default function HomePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="text-gray-400">Загрузка...</div>
+        <div className="text-gray-400">Завантаження...</div>
       </div>
     );
   }
@@ -41,16 +41,16 @@ export default function HomePage() {
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <div className="text-5xl mb-4">💊</div>
         <h1 className="text-xl font-semibold text-gray-800 mb-2">
-          Листов лечения пока нет
+          Листів лікування ще немає
         </h1>
         <p className="text-gray-500 mb-6 max-w-sm">
-          Создайте первый лист — загрузите фото назначения врача или введите данные вручную
+          Створіть перший лист — завантажте фото призначення лікаря або введіть дані вручну
         </p>
         <Link
           href="/sheet/new"
           className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors font-medium"
         >
-          Создать лист лечения
+          Створити лист лікування
         </Link>
       </div>
     );
@@ -58,7 +58,7 @@ export default function HomePage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Мои листы лечения</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Мої листи лікування</h1>
       <div className="grid gap-4">
         {sheets.map((sheet) => {
           const progress =
@@ -81,10 +81,10 @@ export default function HomePage() {
                     )}
                   </h2>
                   <p className="text-sm text-gray-500 mt-0.5">
-                    {sheet.totalDays} дней &bull;{" "}
-                    {new Date(sheet.createdAt).toLocaleDateString("ru-RU")}
+                    {sheet.totalDays} днів &bull;{" "}
+                    {new Date(sheet.createdAt).toLocaleDateString("uk-UA")}
                     {sheet.startDate && (
-                      <> &bull; Начало: {new Date(sheet.startDate).toLocaleDateString("ru-RU")}</>
+                      <> &bull; Початок: {new Date(sheet.startDate).toLocaleDateString("uk-UA")}</>
                     )}
                   </p>
                 </div>
@@ -100,9 +100,9 @@ export default function HomePage() {
               {/* Прогресс бар */}
               <div className="mt-3">
                 <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>Прогресс</span>
+                  <span>Прогрес</span>
                   <span>
-                    {sheet.takenMeds} / {sheet.totalMeds} принято
+                    {sheet.takenMeds} / {sheet.totalMeds} прийнято
                   </span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">

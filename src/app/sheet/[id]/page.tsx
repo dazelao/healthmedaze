@@ -95,7 +95,7 @@ export default function SheetPage({
       loadSheet();
     } else {
       const data = await res.json();
-      setUnlockError(data.error || "Неверный пароль");
+      setUnlockError(data.error || "Невірний пароль");
     }
   };
 
@@ -168,7 +168,7 @@ export default function SheetPage({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="text-gray-400">Загрузка...</div>
+        <div className="text-gray-400">Завантаження...</div>
       </div>
     );
   }
@@ -180,10 +180,10 @@ export default function SheetPage({
         <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
           <div className="text-4xl mb-4">🔒</div>
           <h2 className="font-semibold text-gray-800 text-lg mb-2">
-            Лист защищён паролем
+            Лист захищений паролем
           </h2>
           <p className="text-gray-500 text-sm mb-6">
-            Введите пароль для доступа
+            Введіть пароль для доступу
           </p>
           <input
             type="password"
@@ -200,7 +200,7 @@ export default function SheetPage({
             onClick={handleUnlock}
             className="w-full bg-blue-600 text-white py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-colors"
           >
-            Открыть
+            Відкрити
           </button>
         </div>
       </div>
@@ -223,8 +223,8 @@ export default function SheetPage({
           <h1 className="text-2xl font-bold text-gray-900">{sheet.title}</h1>
           {sheet.startDate && (
             <p className="text-gray-500 text-sm mt-1">
-              Начало: {new Date(sheet.startDate).toLocaleDateString("ru-RU")} &bull;{" "}
-              {sheet.days.length} дней
+              Початок: {new Date(sheet.startDate).toLocaleDateString("uk-UA")} &bull;{" "}
+              {sheet.days.length} днів
             </p>
           )}
         </div>
@@ -239,9 +239,9 @@ export default function SheetPage({
       {/* Общий прогресс */}
       <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-5">
         <div className="flex justify-between text-sm text-gray-600 mb-2">
-          <span>Общий прогресс</span>
+          <span>Загальний прогрес</span>
           <span>
-            {takenCount} / {totalCount} принято
+            {takenCount} / {totalCount} прийнято
           </span>
         </div>
         <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
@@ -298,7 +298,7 @@ export default function SheetPage({
               </span>
               {day.date && (
                 <span className="text-xs opacity-70">
-                  {new Date(day.date).toLocaleDateString("ru-RU", {
+                  {new Date(day.date).toLocaleDateString("uk-UA", {
                     day: "numeric",
                     month: "short",
                   })}

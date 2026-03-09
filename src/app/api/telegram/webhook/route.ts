@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
       if (!sheet) {
         await sendMessage(
-          "❌ Код не найден или истёк. Сгенерируйте новый код в приложении."
+          "❌ Код не знайдено або він застарів. Згенеруйте новий код у додатку."
         );
         return NextResponse.json({ ok: true });
       }
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       });
 
       await sendMessage(
-        `✅ Telegram успешно подключён к листу лечения <b>${sheet.title}</b>!\n\nТеперь я буду напоминать о приёме лекарств. Когда примёте — ответьте <b>/taken</b>`
+        `✅ Telegram успішно підключено до листа лікування <b>${sheet.title}</b>!\n\nТепер я буду нагадувати про прийом ліків. Коли приймете — відповідайте <b>/taken</b>`
       );
       return NextResponse.json({ ok: true });
     }
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (sheets.length === 0) {
-        await sendMessage("❌ Лист лечения не найден. Подключите его через приложение.");
+        await sendMessage("❌ Лист лікування не знайдено. Підключіть його через додаток.");
         return NextResponse.json({ ok: true });
       }
 
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       }
 
       if (allNotTaken.length === 0) {
-        await sendMessage("✅ Все лекарства на сегодня уже отмечены как принятые!");
+        await sendMessage("✅ Всі ліки на сьогодні вже відмічені як прийняті!");
         return NextResponse.json({ ok: true });
       }
 
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       });
 
       const names = allNotTaken.map((m) => `• ${m.name}${m.dosage ? ` ${m.dosage}` : ""}`).join("\n");
-      await sendMessage(`✅ Отлично! Отмечено как принятое:\n${names}`);
+      await sendMessage(`✅ Чудово! Відмічено як прийняте:\n${names}`);
       return NextResponse.json({ ok: true });
     }
 
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (sheets.length === 0) {
-        await sendMessage("❌ Лист лечения не подключён.");
+        await sendMessage("❌ Лист лікування не підключено.");
         return NextResponse.json({ ok: true });
       }
 
@@ -132,10 +132,10 @@ export async function POST(req: NextRequest) {
       today.setHours(0, 0, 0, 0);
 
       const timeLabels: Record<string, string> = {
-        morning: "🌅 Утро",
-        noon: "☀️ Обед",
-        evening: "🌙 Вечер",
-        custom: "⏰ По времени",
+        morning: "🌅 Ранок",
+        noon: "☀️ Обід",
+        evening: "🌙 Вечір",
+        custom: "⏰ За часом",
       };
 
       let fullText = "";
@@ -168,22 +168,22 @@ export async function POST(req: NextRequest) {
         fullText += "\n";
       }
 
-      await sendMessage(fullText || "📅 Сегодня нет запланированных лекарств.");
+      await sendMessage(fullText || "📅 Сьогодні немає запланованих ліків.");
       return NextResponse.json({ ok: true });
     }
 
     // /start — приветствие
     if (text === "/start") {
       await sendMessage(
-        "👋 Привет! Я бот для отслеживания приёма лекарств.\n\n" +
-          "Чтобы подключить лист лечения:\n" +
-          "1. Откройте приложение\n" +
-          "2. Зайдите в настройки листа\n" +
-          "3. Нажмите «Подключить Telegram»\n" +
-          "4. Отправьте мне полученный код (вида LINK-XXXXXX)\n\n" +
-          "Команды:\n" +
-          "/taken — отметить лекарства как принятые\n" +
-          "/status — расписание на сегодня"
+        "👋 Привіт! Я бот для відстеження прийому ліків.\n\n" +
+          "Щоб підключити лист лікування:\n" +
+          "1. Відкрийте додаток\n" +
+          "2. Зайдіть у налаштування листа\n" +
+          "3. Натисніть «Підключити Telegram»\n" +
+          "4. Надішліть мені отриманий код (вигляду LINK-XXXXXX)\n\n" +
+          "Команди:\n" +
+          "/taken — відмітити ліки як прийняті\n" +
+          "/status — розклад на сьогодні"
       );
     }
 

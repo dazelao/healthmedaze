@@ -15,8 +15,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "HealthMe — Дневник лечения",
-  description: "Отслеживание курса лечения по назначению врача",
+  title: "HealthMe — Щоденник лікування",
+  description: "Відстеження курсу лікування за призначенням лікаря",
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru">
+    <html lang="uk">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 min-h-screen`}
       >
@@ -38,7 +38,7 @@ export default function RootLayout({
               href="/sheet/new"
               className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              + Новый лист
+              + Новий лист
             </Link>
           </div>
         </header>

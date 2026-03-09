@@ -26,10 +26,10 @@ interface DayViewProps {
 }
 
 const TIME_GROUPS: { key: string; label: string; icon: string }[] = [
-  { key: "morning", label: "Утро", icon: "🌅" },
-  { key: "noon", label: "Обед", icon: "☀️" },
-  { key: "evening", label: "Вечер", icon: "🌙" },
-  { key: "custom", label: "По времени", icon: "⏰" },
+  { key: "morning", label: "Ранок", icon: "🌅" },
+  { key: "noon", label: "Обід", icon: "☀️" },
+  { key: "evening", label: "Вечір", icon: "🌙" },
+  { key: "custom", label: "За часом", icon: "⏰" },
 ];
 
 export default function DayView({ day, onToggle, onDelete, onAdd }: DayViewProps) {
@@ -71,7 +71,7 @@ export default function DayView({ day, onToggle, onDelete, onAdd }: DayViewProps
             <h2 className="font-semibold text-gray-900">День {day.dayNumber}</h2>
             {day.date && (
               <p className="text-sm text-gray-500">
-                {new Date(day.date).toLocaleDateString("ru-RU", {
+                {new Date(day.date).toLocaleDateString("uk-UA", {
                   weekday: "long",
                   day: "numeric",
                   month: "long",
@@ -97,7 +97,7 @@ export default function DayView({ day, onToggle, onDelete, onAdd }: DayViewProps
       <div className="divide-y divide-gray-50">
         {grouped.length === 0 && (
           <div className="px-5 py-8 text-center text-gray-400 text-sm">
-            Нет лекарств. Добавьте ниже.
+            Немає ліків. Додайте нижче.
           </div>
         )}
 
@@ -165,7 +165,7 @@ export default function DayView({ day, onToggle, onDelete, onAdd }: DayViewProps
               type="text"
               value={newMed.name}
               onChange={(e) => setNewMed({ ...newMed, name: e.target.value })}
-              placeholder="Название"
+              placeholder="Назва"
               autoFocus
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-400"
             />
@@ -173,7 +173,7 @@ export default function DayView({ day, onToggle, onDelete, onAdd }: DayViewProps
               type="text"
               value={newMed.dosage}
               onChange={(e) => setNewMed({ ...newMed, dosage: e.target.value })}
-              placeholder="Дозировка"
+              placeholder="Дозування"
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-400"
             />
             <select
@@ -181,10 +181,10 @@ export default function DayView({ day, onToggle, onDelete, onAdd }: DayViewProps
               onChange={(e) => setNewMed({ ...newMed, timeOfDay: e.target.value })}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-400"
             >
-              <option value="morning">Утро</option>
-              <option value="noon">Обед</option>
-              <option value="evening">Вечер</option>
-              <option value="custom">По времени</option>
+              <option value="morning">Ранок</option>
+              <option value="noon">Обід</option>
+              <option value="evening">Вечір</option>
+              <option value="custom">За часом</option>
             </select>
             {newMed.timeOfDay === "custom" && (
               <input
@@ -200,13 +200,13 @@ export default function DayView({ day, onToggle, onDelete, onAdd }: DayViewProps
               onClick={handleAdd}
               className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
             >
-              Добавить
+              Додати
             </button>
             <button
               onClick={() => setShowAddForm(false)}
               className="px-4 py-2 text-gray-500 hover:text-gray-700 text-sm"
             >
-              Отмена
+              Скасувати
             </button>
           </div>
         </div>
@@ -216,7 +216,7 @@ export default function DayView({ day, onToggle, onDelete, onAdd }: DayViewProps
             onClick={() => setShowAddForm(true)}
             className="w-full py-2 text-sm text-gray-500 hover:text-blue-600 border-2 border-dashed border-gray-200 rounded-xl hover:border-blue-300 transition-colors"
           >
-            + Добавить лекарство
+            + Додати ліки
           </button>
         </div>
       )}

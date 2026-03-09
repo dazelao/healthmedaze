@@ -63,9 +63,9 @@ export default function TelegramSettings({
         <div className="flex items-center gap-3">
           <span className="text-2xl">✅</span>
           <div>
-            <p className="font-medium text-green-800">Telegram подключён</p>
+            <p className="font-medium text-green-800">Telegram підключено</p>
             <p className="text-sm text-green-600">
-              Вы будете получать напоминания в @healthmedaze_bot
+              Ви будете отримувати нагадування в @healthmedaze_bot
             </p>
           </div>
         </div>
@@ -78,8 +78,8 @@ export default function TelegramSettings({
       <div className="flex items-center gap-3 mb-4">
         <span className="text-2xl">📱</span>
         <div>
-          <p className="font-medium text-gray-800">Telegram уведомления</p>
-          <p className="text-sm text-gray-500">Подключите бота для напоминаний</p>
+          <p className="font-medium text-gray-800">Telegram сповіщення</p>
+          <p className="text-sm text-gray-500">Підключіть бота для нагадувань</p>
         </div>
       </div>
 
@@ -89,16 +89,16 @@ export default function TelegramSettings({
           disabled={generating}
           className="w-full bg-blue-600 text-white py-2.5 rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
-          {generating ? "Генерирую код..." : "Подключить Telegram"}
+          {generating ? "Генерую код..." : "Підключити Telegram"}
         </button>
       ) : (
         <div className="space-y-4">
           <div className="bg-gray-50 rounded-xl p-4 text-center">
-            <p className="text-xs text-gray-500 mb-2">Отправьте этот код боту:</p>
+            <p className="text-xs text-gray-500 mb-2">Надішліть цей код боту:</p>
             <p className="text-2xl font-mono font-bold text-blue-600 tracking-widest">
               {code}
             </p>
-            <p className="text-xs text-gray-400 mt-2">Код действителен 10 минут</p>
+            <p className="text-xs text-gray-400 mt-2">Код дійсний 10 хвилин</p>
           </div>
 
           <a
@@ -107,13 +107,13 @@ export default function TelegramSettings({
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full bg-blue-500 text-white py-2.5 rounded-xl font-medium hover:bg-blue-600 transition-colors"
           >
-            <span>Открыть @healthmedaze_bot</span>
+            <span>Відкрити @healthmedaze_bot</span>
             <span className="text-xs">↗</span>
           </a>
 
           {polling && (
             <p className="text-center text-sm text-gray-500">
-              Ожидаю подтверждения...{" "}
+              Очікую підтвердження...{" "}
               <span className="inline-block animate-pulse">⏳</span>
             </p>
           )}
@@ -123,7 +123,7 @@ export default function TelegramSettings({
             disabled={generating}
             className="w-full text-sm text-gray-500 hover:text-gray-700 underline"
           >
-            Сгенерировать новый код
+            Згенерувати новий код
           </button>
         </div>
       )}

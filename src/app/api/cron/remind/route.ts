@@ -55,19 +55,19 @@ async function runReminders(forcedTimeOfDay?: string) {
 
     const timeLabel =
       currentTimeOfDay === "morning"
-        ? "Утренние"
+        ? "Ранкові"
         : currentTimeOfDay === "noon"
-          ? "Дневные"
-          : "Вечерние";
+          ? "Денні"
+          : "Вечірні";
 
     const medList = pendingMeds
       .map((m) => `• ${m.name}${m.dosage ? ` (${m.dosage})` : ""}`)
       .join("\n");
 
     const text =
-      `💊 <b>Напоминание!</b> ${timeLabel} лекарства — День ${todayDay.dayNumber}:\n\n` +
+      `💊 <b>Нагадування!</b> ${timeLabel} ліки — День ${todayDay.dayNumber}:\n\n` +
       `${medList}\n\n` +
-      `Когда примете, напишите <b>/taken</b>`;
+      `Коли приймете, напишіть <b>/taken</b>`;
 
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",

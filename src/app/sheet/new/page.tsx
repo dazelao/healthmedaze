@@ -17,10 +17,10 @@ interface ParsedPlan {
 }
 
 const TIME_LABELS: Record<string, string> = {
-  morning: "Утро",
-  noon: "Обед",
-  evening: "Вечер",
-  custom: "По времени",
+  morning: "Ранок",
+  noon: "Обід",
+  evening: "Вечір",
+  custom: "За часом",
 };
 
 export default function NewSheetPage() {
@@ -71,19 +71,19 @@ const [previewUrl, setPreviewUrl] = useState("");
       if (!res.ok) throw new Error(data.error || "Ошибка анализа");
 
       const plan: ParsedPlan = data.plan;
-      setTitle(plan.title || "Лечение");
+      setTitle(plan.title || "Лікування");
       setDurationDays(plan.durationDays || 7);
       setMedications(plan.medications || []);
       setStep("review");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка");
+      setError(e instanceof Error ? e.message : "Помилка");
     } finally {
       setLoading(false);
     }
   };
 
   const handleSkipPhoto = () => {
-    setTitle("Новый лист лечения");
+    setTitle("Новий лист лікування");
     setMedications([]);
     setStep("review");
   };
@@ -109,7 +109,7 @@ const [previewUrl, setPreviewUrl] = useState("");
 
   const handleSave = async () => {
     if (!title.trim()) {
-      setError("Укажите название листа");
+      setError("Вкажіть назву листа");
       return;
     }
 
@@ -141,11 +141,11 @@ const [previewUrl, setPreviewUrl] = useState("");
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Ошибка сохранения");
+      if (!res.ok) throw new Error(data.error || "Помилка збереження");
 
       router.push(`/sheet/${data.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка");
+      setError(e instanceof Error ? e.message : "Помилка");
       setStep("review");
     }
   };
@@ -153,7 +153,7 @@ const [previewUrl, setPreviewUrl] = useState("");
   return (
     <div className="max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        Новый лист лечения
+        Новий лист лікування
       </h1>
 
       {/* Шаг 1: загрузка фото */}
@@ -161,7 +161,7 @@ const [previewUrl, setPreviewUrl] = useState("");
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <h2 className="font-semibold text-gray-800 mb-4">
-              Загрузите фото назначения
+              Завантажте фото призначення
             </h2>
 
             <div
@@ -178,7 +178,7 @@ const [previewUrl, setPreviewUrl] = useState("");
                 <div>
                   <div className="text-4xl mb-3">📷</div>
                   <p className="text-gray-500">
-                    Нажмите чтобы выбрать фото назначения врача
+                    Натисніть щоб вибрати фото призначення лікаря
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
                     JPG, PNG, HEIC до 10 МБ
@@ -201,7 +201,7 @@ const [previewUrl, setPreviewUrl] = useState("");
                 disabled={loading}
                 className="w-full mt-4 bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
-                {loading ? "Анализирую..." : "Распознать назначение"}
+                {loading ? "Аналізую..." : "Розпізнати призначення"}
               </button>
             )}
 
@@ -215,7 +215,7 @@ const [previewUrl, setPreviewUrl] = useState("");
               onClick={handleSkipPhoto}
               className="text-gray-500 hover:text-gray-700 text-sm underline"
             >
-              Пропустить — заполню вручную
+              Пропустити — заповню вручну
             </button>
           </div>
         </div>
@@ -227,14 +227,14 @@ const [previewUrl, setPreviewUrl] = useState("");
           {/* Название */}
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Название листа
+              Назва листа
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-blue-400"
-              placeholder="Например: Лечение ОРВИ"
+              placeholder="Наприклад: Лікування ГРВІ"
             />
           </div>
 
@@ -242,7 +242,7 @@ const [previewUrl, setPreviewUrl] = useState("");
           <div className="bg-white rounded-2xl border border-gray-200 p-5 grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Дата начала
+                Дата початку
               </label>
               <input
                 type="date"
@@ -253,7 +253,7 @@ const [previewUrl, setPreviewUrl] = useState("");
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Длительность (дней)
+                Тривалість (днів)
               </label>
               <input
                 type="number"
@@ -269,9 +269,9 @@ const [previewUrl, setPreviewUrl] = useState("");
           {/* Лекарства */}
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-800">Лекарства</h2>
+              <h2 className="font-semibold text-gray-800">Ліки</h2>
               <p className="text-xs text-gray-500">
-                Эти лекарства будут добавлены ко каждому дню
+                Ці ліки будуть додані до кожного дня
               </p>
             </div>
 
@@ -287,14 +287,14 @@ const [previewUrl, setPreviewUrl] = useState("");
                       type="text"
                       value={med.name}
                       onChange={(e) => updateMedication(i, "name", e.target.value)}
-                      placeholder="Название"
+                      placeholder="Назва"
                       className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-blue-400"
                     />
                     <input
                       type="text"
                       value={med.dosage}
                       onChange={(e) => updateMedication(i, "dosage", e.target.value)}
-                      placeholder="Дозировка"
+                      placeholder="Дозування"
                       className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-blue-400"
                     />
                     <select
@@ -331,20 +331,20 @@ const [previewUrl, setPreviewUrl] = useState("");
               onClick={addMedication}
               className="mt-3 w-full border-2 border-dashed border-gray-300 rounded-xl py-2 text-gray-500 hover:border-blue-400 hover:text-blue-500 text-sm transition-colors"
             >
-              + Добавить лекарство
+              + Додати ліки
             </button>
           </div>
 
           {/* Пароль */}
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Пароль (необязательно)
+              Пароль (необов'язково)
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Оставьте пустым для открытого доступа"
+              placeholder="Залиште порожнім для відкритого доступу"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:border-blue-400"
             />
           </div>
@@ -358,7 +358,7 @@ const [previewUrl, setPreviewUrl] = useState("");
             disabled={step === "saving"}
             className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
-            {step === "saving" ? "Сохраняю..." : "Создать лист лечения"}
+            {step === "saving" ? "Зберігаю..." : "Створити лист лікування"}
           </button>
         </div>
       )}
