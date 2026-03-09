@@ -17,6 +17,66 @@ export interface ParsedTreatmentPlan {
   medications: ParsedMedication[];
 }
 
+export async function parseTreatmentFromImage(
+  imageBase64: string,
+  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" = "image/jpeg"
+): Promise<ParsedTreatmentPlan> {
+  const prompt = `Ты помощник по анализу медицинских назначений врача.
+Тебе дано фото назначения врача. Извлеки из него план лечения и верни строго в JSON формате без лишнего текста.
+
+Верни JSON в следующем формате:
+{
+  "title": "короткое название (например: Лечение ОРВИ, Антибиотикотерапия)",
+  "durationDays": число дней лечения (если не указано явно, определи по курсу),
+  "medications": [
+    {
+      "name": "название препарата",
+      "dosage": "дозировка (например: 500мг, 1 таблетка)",
+      "timeOfDay": "morning" | "noon" | "evening" | "custom",
+      "customTime": "ЧЧ:ММ если timeOfDay=custom, иначе не включай это поле"
+    }
+  ]
+}
+
+Правила:
+- Если лекарство принимается несколько раз в день — добавь его несколько раз с разным timeOfDay
+- timeOfDay: morning=утро, noon=обед/день, evening=вечер/ночь
+- Если время нестандартное — используй custom и укажи customTime
+- Если количество дней не указано, поставь 7
+- Верни ТОЛЬКО JSON, никакого другого текста`;
+
+  const message = await client.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 1024,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: mediaType,
+              data: imageBase64,
+            },
+          },
+          { type: "text", text: prompt },
+        ],
+      },
+    ],
+  });
+
+  const text =
+    message.content[0].type === "text" ? message.content[0].text : "";
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error("Claude не вернул корректный JSON");
+  }
+
+  return JSON.parse(jsonMatch[0]) as ParsedTreatmentPlan;
+}
+
 export async function parseTreatmentText(
   ocrText: string
 ): Promise<ParsedTreatmentPlan> {

@@ -39,8 +39,7 @@ export default function NewSheetPage() {
   const [password, setPassword] = useState("");
   const [durationDays, setDurationDays] = useState(7);
   const [medications, setMedications] = useState<ParsedMed[]>([]);
-  const [ocrText, setOcrText] = useState("");
-  const [previewUrl, setPreviewUrl] = useState("");
+const [previewUrl, setPreviewUrl] = useState("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -59,20 +58,19 @@ export default function NewSheetPage() {
     setError("");
 
     try {
-      // Убираем data:image/...;base64, префикс
-      const base64 = previewUrl.split(",")[1];
+      const [header, base64] = previewUrl.split(",");
+      const mediaType = header.match(/:(.*?);/)?.[1] || "image/jpeg";
 
       const res = await fetch("/api/sheets/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64 }),
+        body: JSON.stringify({ imageBase64: base64, mediaType }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Ошибка анализа");
 
       const plan: ParsedPlan = data.plan;
-      setOcrText(data.ocrText);
       setTitle(plan.title || "Лечение");
       setDurationDays(plan.durationDays || 7);
       setMedications(plan.medications || []);
@@ -277,16 +275,6 @@ export default function NewSheetPage() {
               </p>
             </div>
 
-            {ocrText && (
-              <details className="mb-4">
-                <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">
-                  Распознанный текст (OCR)
-                </summary>
-                <pre className="mt-2 text-xs text-gray-500 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
-                  {ocrText}
-                </pre>
-              </details>
-            )}
 
             <div className="space-y-3">
               {medications.map((med, i) => (
