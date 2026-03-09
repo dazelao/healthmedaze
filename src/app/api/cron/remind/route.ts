@@ -1,28 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET /api/cron/remind — вызывается Vercel Cron каждые 15 минут
-export async function GET(req: NextRequest) {
-  // Защита: только Vercel Cron или наш secret
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+async function runReminders(forcedTimeOfDay?: string) {
   const now = new Date();
-  const currentHour = now.getHours();
+  // Vercel работает в UTC, добавляем +2 для Киева
+  const kyivHour = (now.getUTCHours() + 2) % 24;
 
-  // Определяем текущее timeOfDay
-  let currentTimeOfDay: string | null = null;
-  if (currentHour >= 7 && currentHour < 11) currentTimeOfDay = "morning";
-  else if (currentHour >= 11 && currentHour < 16) currentTimeOfDay = "noon";
-  else if (currentHour >= 18 && currentHour < 23) currentTimeOfDay = "evening";
+  let currentTimeOfDay: string | null = forcedTimeOfDay ?? null;
 
   if (!currentTimeOfDay) {
-    return NextResponse.json({ ok: true, skipped: "outside reminder hours" });
+    if (kyivHour >= 7 && kyivHour < 11) currentTimeOfDay = "morning";
+    else if (kyivHour >= 11 && kyivHour < 16) currentTimeOfDay = "noon";
+    else if (kyivHour >= 18 && kyivHour < 23) currentTimeOfDay = "evening";
   }
 
-  // Находим все листы с привязанным Telegram
+  if (!currentTimeOfDay) {
+    return { ok: true, skipped: "outside reminder hours", kyivHour };
+  }
+
   const sheets = await prisma.sheet.findMany({
     where: { telegramId: { not: null } },
     include: {
@@ -38,12 +33,11 @@ export async function GET(req: NextRequest) {
 
   let remindCount = 0;
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  if (!botToken) return NextResponse.json({ ok: true, error: "no bot token" });
+  if (!botToken) return { ok: false, error: "no bot token" };
 
   for (const sheet of sheets) {
     if (!sheet.telegramId) continue;
 
-    // Найти день на сегодня
     const todayDay = sheet.days.find((d) => {
       if (!d.date) return false;
       const dayDate = new Date(d.date);
@@ -53,7 +47,6 @@ export async function GET(req: NextRequest) {
 
     if (!todayDay) continue;
 
-    // Непринятые лекарства для текущего времени
     const pendingMeds = todayDay.medications.filter(
       (m) => !m.isTaken && m.timeOfDay === currentTimeOfDay
     );
@@ -62,35 +55,58 @@ export async function GET(req: NextRequest) {
 
     const timeLabel =
       currentTimeOfDay === "morning"
-        ? "утренние"
+        ? "Утренние"
         : currentTimeOfDay === "noon"
-          ? "дневные"
-          : "вечерние";
+          ? "Дневные"
+          : "Вечерние";
 
     const medList = pendingMeds
       .map((m) => `• ${m.name}${m.dosage ? ` (${m.dosage})` : ""}`)
       .join("\n");
 
-    const message =
-      `💊 <b>Напоминание!</b> ${timeLabel.charAt(0).toUpperCase() + timeLabel.slice(1)} лекарства — День ${todayDay.dayNumber}:\n\n` +
+    const text =
+      `💊 <b>Напоминание!</b> ${timeLabel} лекарства — День ${todayDay.dayNumber}:\n\n` +
       `${medList}\n\n` +
       `Когда примете, напишите <b>/taken</b>`;
 
-    try {
-      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: sheet.telegramId,
-          text: message,
-          parse_mode: "HTML",
-        }),
-      });
-      remindCount++;
-    } catch (e) {
-      console.error(`Failed to send reminder to ${sheet.telegramId}:`, e);
-    }
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: sheet.telegramId,
+        text,
+        parse_mode: "HTML",
+      }),
+    });
+
+    remindCount++;
   }
 
-  return NextResponse.json({ ok: true, remindCount });
+  return {
+    ok: true,
+    time: now.toISOString(),
+    kyivHour,
+    timeOfDay: currentTimeOfDay,
+    remindCount,
+  };
+}
+
+// POST — вызывается с твоего сервера
+export async function POST(req: NextRequest) {
+  let forcedTimeOfDay: string | undefined;
+  try {
+    const body = await req.json();
+    forcedTimeOfDay = body?.timeOfDay;
+  } catch {
+    // тело пустое — ок
+  }
+
+  const result = await runReminders(forcedTimeOfDay);
+  return NextResponse.json(result);
+}
+
+// GET — оставлен для обратной совместимости / ручной проверки
+export async function GET() {
+  const result = await runReminders();
+  return NextResponse.json(result);
 }
