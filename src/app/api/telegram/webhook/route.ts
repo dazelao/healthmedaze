@@ -62,9 +62,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // /taken — отметить текущий приём как выполненный
+    // /taken — отметить текущий приём как выполненный (во ВСЕХ подключённых листах)
     if (text === "/taken" || text === "/taken@" + process.env.BOT_USERNAME) {
-      const sheet = await prisma.sheet.findFirst({
+      const sheets = await prisma.sheet.findMany({
         where: { telegramId },
         include: {
           days: {
@@ -74,51 +74,46 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      if (!sheet) {
+      if (sheets.length === 0) {
         await sendMessage("❌ Лист лечения не найден. Подключите его через приложение.");
         return NextResponse.json({ ok: true });
       }
 
-      // Найти непринятые лекарства на сегодня
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
 
-      const todayDay = sheet.days.find((d) => {
-        if (!d.date) return false;
-        const dayDate = new Date(d.date);
-        dayDate.setHours(0, 0, 0, 0);
-        return dayDate.getTime() === today.getTime();
-      });
+      const allNotTaken: { id: string; name: string; dosage: string | null }[] = [];
 
-      if (!todayDay) {
-        await sendMessage("📅 Сегодня нет запланированных лекарств.");
-        return NextResponse.json({ ok: true });
+      for (const sheet of sheets) {
+        const todayDay = sheet.days.find((d) => {
+          if (!d.date) return false;
+          const dayDate = new Date(d.date);
+          dayDate.setHours(0, 0, 0, 0);
+          return dayDate.getTime() === today.getTime();
+        });
+        if (!todayDay) continue;
+        const pending = todayDay.medications.filter((m) => !m.isTaken);
+        allNotTaken.push(...pending);
       }
 
-      const notTaken = todayDay.medications.filter((m) => !m.isTaken);
-      if (notTaken.length === 0) {
+      if (allNotTaken.length === 0) {
         await sendMessage("✅ Все лекарства на сегодня уже отмечены как принятые!");
         return NextResponse.json({ ok: true });
       }
 
-      // Отмечаем все непринятые как принятые
       await prisma.medication.updateMany({
-        where: {
-          id: { in: notTaken.map((m) => m.id) },
-        },
+        where: { id: { in: allNotTaken.map((m) => m.id) } },
         data: { isTaken: true, takenAt: new Date() },
       });
 
-      const names = notTaken.map((m) => `• ${m.name}${m.dosage ? ` ${m.dosage}` : ""}`).join("\n");
+      const names = allNotTaken.map((m) => `• ${m.name}${m.dosage ? ` ${m.dosage}` : ""}`).join("\n");
       await sendMessage(`✅ Отлично! Отмечено как принятое:\n${names}`);
       return NextResponse.json({ ok: true });
     }
 
-    // /status — показать сегодняшнее расписание
+    // /status — показать сегодняшнее расписание по всем листам
     if (text === "/status") {
-      const sheet = await prisma.sheet.findFirst({
+      const sheets = await prisma.sheet.findMany({
         where: { telegramId },
         include: {
           days: {
@@ -128,25 +123,13 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      if (!sheet) {
+      if (sheets.length === 0) {
         await sendMessage("❌ Лист лечения не подключён.");
         return NextResponse.json({ ok: true });
       }
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-
-      const todayDay = sheet.days.find((d) => {
-        if (!d.date) return false;
-        const dayDate = new Date(d.date);
-        dayDate.setHours(0, 0, 0, 0);
-        return dayDate.getTime() === today.getTime();
-      });
-
-      if (!todayDay) {
-        await sendMessage("📅 Сегодня нет запланированных лекарств.");
-        return NextResponse.json({ ok: true });
-      }
 
       const timeLabels: Record<string, string> = {
         morning: "🌅 Утро",
@@ -155,26 +138,37 @@ export async function POST(req: NextRequest) {
         custom: "⏰ По времени",
       };
 
-      const byTime = todayDay.medications.reduce(
-        (acc, m) => {
-          const key = m.timeOfDay;
-          if (!acc[key]) acc[key] = [];
-          acc[key].push(m);
-          return acc;
-        },
-        {} as Record<string, typeof todayDay.medications>
-      );
+      let fullText = "";
 
-      let statusText = `📋 <b>${sheet.title}</b> — День ${todayDay.dayNumber}\n\n`;
-      for (const [time, meds] of Object.entries(byTime)) {
-        statusText += `${timeLabels[time] || time}:\n`;
-        for (const m of meds) {
-          statusText += `${m.isTaken ? "✅" : "⬜"} ${m.name}${m.dosage ? ` ${m.dosage}` : ""}\n`;
+      for (const sheet of sheets) {
+        const todayDay = sheet.days.find((d) => {
+          if (!d.date) return false;
+          const dayDate = new Date(d.date);
+          dayDate.setHours(0, 0, 0, 0);
+          return dayDate.getTime() === today.getTime();
+        });
+        if (!todayDay) continue;
+
+        const byTime = todayDay.medications.reduce(
+          (acc, m) => {
+            if (!acc[m.timeOfDay]) acc[m.timeOfDay] = [];
+            acc[m.timeOfDay].push(m);
+            return acc;
+          },
+          {} as Record<string, typeof todayDay.medications>
+        );
+
+        fullText += `📋 <b>${sheet.title}</b> — День ${todayDay.dayNumber}\n`;
+        for (const [time, meds] of Object.entries(byTime)) {
+          fullText += `${timeLabels[time] || time}:\n`;
+          for (const m of meds) {
+            fullText += `${m.isTaken ? "✅" : "⬜"} ${m.name}${m.dosage ? ` ${m.dosage}` : ""}\n`;
+          }
         }
-        statusText += "\n";
+        fullText += "\n";
       }
 
-      await sendMessage(statusText);
+      await sendMessage(fullText || "📅 Сегодня нет запланированных лекарств.");
       return NextResponse.json({ ok: true });
     }
 
