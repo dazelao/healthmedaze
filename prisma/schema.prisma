@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Sheet {
+  id           String    @id @default(cuid())
+  title        String
+  passwordHash String?
+  createdAt    DateTime  @default(now())
+  startDate    DateTime?
+  rawText      String?
+  telegramId   String?
+  linkCode     String?
+  linkCodeExp  DateTime?
+
+  days Day[]
+}
+
+model Day {
+  id        String   @id @default(cuid())
+  sheetId   String
+  dayNumber Int
+  date      DateTime?
+
+  sheet       Sheet        @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  medications Medication[]
+
+  @@unique([sheetId, dayNumber])
+}
+
+model Medication {
+  id         String    @id @default(cuid())
+  dayId      String
+  name       String
+  dosage     String?
+  timeOfDay  String    @default("morning") // morning | noon | evening | custom
+  customTime String?
+  isTaken    Boolean   @default(false)
+  takenAt    DateTime?
+
+  day Day @relation(fields: [dayId], references: [id], onDelete: Cascade)
+}
