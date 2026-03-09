@@ -288,19 +288,19 @@ const [previewUrl, setPreviewUrl] = useState("");
                       value={med.name}
                       onChange={(e) => updateMedication(i, "name", e.target.value)}
                       placeholder="Название"
-                      className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-400"
+                      className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-blue-400"
                     />
                     <input
                       type="text"
                       value={med.dosage}
                       onChange={(e) => updateMedication(i, "dosage", e.target.value)}
                       placeholder="Дозировка"
-                      className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-400"
+                      className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-blue-400"
                     />
                     <select
                       value={med.timeOfDay}
                       onChange={(e) => updateMedication(i, "timeOfDay", e.target.value)}
-                      className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-400"
+                      className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-blue-400"
                     >
                       {Object.entries(TIME_LABELS).map(([val, label]) => (
                         <option key={val} value={val}>
@@ -313,7 +313,7 @@ const [previewUrl, setPreviewUrl] = useState("");
                         type="time"
                         value={med.customTime || ""}
                         onChange={(e) => updateMedication(i, "customTime", e.target.value)}
-                        className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-400"
+                        className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-blue-400"
                       />
                     )}
                   </div>

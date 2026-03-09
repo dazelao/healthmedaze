@@ -167,19 +167,19 @@ export default function DayView({ day, onToggle, onDelete, onAdd }: DayViewProps
               onChange={(e) => setNewMed({ ...newMed, name: e.target.value })}
               placeholder="Название"
               autoFocus
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-400"
             />
             <input
               type="text"
               value={newMed.dosage}
               onChange={(e) => setNewMed({ ...newMed, dosage: e.target.value })}
               placeholder="Дозировка"
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-400"
             />
             <select
               value={newMed.timeOfDay}
               onChange={(e) => setNewMed({ ...newMed, timeOfDay: e.target.value })}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-400"
             >
               <option value="morning">Утро</option>
               <option value="noon">Обед</option>
@@ -191,7 +191,7 @@ export default function DayView({ day, onToggle, onDelete, onAdd }: DayViewProps
                 type="time"
                 value={newMed.customTime}
                 onChange={(e) => setNewMed({ ...newMed, customTime: e.target.value })}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-400"
               />
             )}
           </div>
