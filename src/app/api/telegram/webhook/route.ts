@@ -53,10 +53,12 @@ export async function POST(req: NextRequest) {
         const nowUtc = new Date();
         const kyivHour = (nowUtc.getUTCHours() + 2) % 24;
         const kyivTotalMin = kyivHour * 60 + nowUtc.getUTCMinutes();
-        const passedSlots: string[] = [];
-        if (kyivHour >= 7) passedSlots.push("morning");
-        if (kyivHour >= 11) passedSlots.push("noon");
-        if (kyivHour >= 18) passedSlots.push("evening");
+
+        let cbSlot: string;
+        if (kyivHour >= 7 && kyivHour < 11) cbSlot = "morning";
+        else if (kyivHour >= 11 && kyivHour < 18) cbSlot = "noon";
+        else if (kyivHour >= 18 && kyivHour < 23) cbSlot = "evening";
+        else cbSlot = "any";
 
         const ids: string[] = [];
         for (const sheet of sheets) {
@@ -69,10 +71,11 @@ export async function POST(req: NextRequest) {
           todayDay.medications.forEach((m) => {
             if (m.isTaken) return;
             if (m.timeOfDay === "custom") {
-              if (!m.customTime) { ids.push(m.id); return; }
+              if (!m.customTime) { if (cbSlot === "any") ids.push(m.id); return; }
               const [h, min] = m.customTime.split(":").map(Number);
-              if (h * 60 + (min || 0) <= kyivTotalMin) ids.push(m.id);
-            } else if (passedSlots.includes(m.timeOfDay)) {
+              const medMin = h * 60 + (min || 0);
+              if (medMin >= kyivTotalMin - 30 && medMin <= kyivTotalMin + 30) ids.push(m.id);
+            } else if (cbSlot === "any" || m.timeOfDay === cbSlot) {
               ids.push(m.id);
             }
           });
@@ -182,17 +185,16 @@ export async function POST(req: NextRequest) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Поточний час у Києві (UTC+2)
+      // Поточний слот (UTC+2, Київ) — той самий що й у нагадуванні
       const nowUtc = new Date();
       const kyivHour = (nowUtc.getUTCHours() + 2) % 24;
-      const kyivMin = nowUtc.getUTCMinutes();
-      const kyivTotalMin = kyivHour * 60 + kyivMin;
+      const kyivTotalMin = kyivHour * 60 + nowUtc.getUTCMinutes();
 
-      // Слоти, час яких вже настав
-      const passedSlots: string[] = [];
-      if (kyivHour >= 7) passedSlots.push("morning");
-      if (kyivHour >= 11) passedSlots.push("noon");
-      if (kyivHour >= 18) passedSlots.push("evening");
+      let currentSlot: string;
+      if (kyivHour >= 7 && kyivHour < 11) currentSlot = "morning";
+      else if (kyivHour >= 11 && kyivHour < 18) currentSlot = "noon";
+      else if (kyivHour >= 18 && kyivHour < 23) currentSlot = "evening";
+      else currentSlot = "any";
 
       const allNotTaken: { id: string; name: string; dosage: string | null }[] = [];
 
@@ -207,12 +209,13 @@ export async function POST(req: NextRequest) {
         const pending = todayDay.medications.filter((m) => {
           if (m.isTaken) return false;
           if (m.timeOfDay === "custom") {
-            // custom — включати якщо час вже настав або не вказано
-            if (!m.customTime) return true;
+            if (!m.customTime) return currentSlot === "any";
             const [h, min] = m.customTime.split(":").map(Number);
-            return h * 60 + (min || 0) <= kyivTotalMin;
+            const medMin = h * 60 + (min || 0);
+            // custom — в межах ±30 хв від поточного часу
+            return medMin >= kyivTotalMin - 30 && medMin <= kyivTotalMin + 30;
           }
-          return passedSlots.includes(m.timeOfDay);
+          return currentSlot === "any" || m.timeOfDay === currentSlot;
         });
         allNotTaken.push(...pending);
       }
