@@ -79,8 +79,15 @@ async function runReminders(forcedTimeOfDay?: string) {
 
     const text =
       `💊 <b>Нагадування!</b> ${timeLabel} ліки — День ${todayDay.dayNumber}:\n\n` +
-      `${medList}\n\n` +
-      `Коли приймете, напишіть <b>/taken</b>`;
+      `${medList}`;
+
+    const keyboard = [
+      ...pendingMeds.map((m) => [{
+        text: `✅ ${m.name}`,
+        callback_data: `take_${m.id}`,
+      }]),
+      [{ text: "✓ Прийняти всі", callback_data: "take_all" }],
+    ];
 
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
@@ -89,6 +96,7 @@ async function runReminders(forcedTimeOfDay?: string) {
         chat_id: sheet.telegramId,
         text,
         parse_mode: "HTML",
+        reply_markup: { inline_keyboard: keyboard },
       }),
     });
 

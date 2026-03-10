@@ -7,6 +7,110 @@ export async function POST(req: NextRequest) {
     const update = await req.json();
     const message = update.message;
 
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (!botToken) return NextResponse.json({ ok: true });
+
+    // Допоміжні функції Telegram API
+    const answerCallbackQuery = async (callbackQueryId: string, text: string) => {
+      await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ callback_query_id: callbackQueryId, text, show_alert: false }),
+      });
+    };
+
+    const editMessageText = async (chatId: number, messageId: number, text: string) => {
+      await fetch(`https://api.telegram.org/bot${botToken}/editMessageText`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, message_id: messageId, text }),
+      });
+    };
+
+    const editMessageReplyMarkup = async (chatId: number, messageId: number, keyboard: { text: string; callback_data: string }[][]) => {
+      await fetch(`https://api.telegram.org/bot${botToken}/editMessageReplyMarkup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: keyboard } }),
+      });
+    };
+
+    // Обробка натискання inline кнопки
+    const callbackQuery = update.callback_query;
+    if (callbackQuery) {
+      const cbData = callbackQuery.data as string;
+      const cbChatId = callbackQuery.message.chat.id;
+      const cbMessageId = callbackQuery.message.message_id;
+      const cbTelegramId = String(callbackQuery.from.id);
+
+      if (cbData === "take_all") {
+        // Відмітити всі ліки поточного слоту (та прострочених)
+        const sheets = await prisma.sheet.findMany({
+          where: { telegramId: cbTelegramId },
+          include: { days: { include: { medications: true }, orderBy: { dayNumber: "asc" } } },
+        });
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const nowUtc = new Date();
+        const kyivHour = (nowUtc.getUTCHours() + 2) % 24;
+        const kyivTotalMin = kyivHour * 60 + nowUtc.getUTCMinutes();
+        const passedSlots: string[] = [];
+        if (kyivHour >= 7) passedSlots.push("morning");
+        if (kyivHour >= 11) passedSlots.push("noon");
+        if (kyivHour >= 18) passedSlots.push("evening");
+
+        const ids: string[] = [];
+        for (const sheet of sheets) {
+          const todayDay = sheet.days.find((d) => {
+            if (!d.date) return false;
+            const dd = new Date(d.date); dd.setHours(0, 0, 0, 0);
+            return dd.getTime() === today.getTime();
+          });
+          if (!todayDay) continue;
+          todayDay.medications.forEach((m) => {
+            if (m.isTaken) return;
+            if (m.timeOfDay === "custom") {
+              if (!m.customTime) { ids.push(m.id); return; }
+              const [h, min] = m.customTime.split(":").map(Number);
+              if (h * 60 + (min || 0) <= kyivTotalMin) ids.push(m.id);
+            } else if (passedSlots.includes(m.timeOfDay)) {
+              ids.push(m.id);
+            }
+          });
+        }
+        if (ids.length > 0) {
+          await prisma.medication.updateMany({ where: { id: { in: ids } }, data: { isTaken: true, takenAt: new Date() } });
+        }
+        await answerCallbackQuery(callbackQuery.id, "✅ Всі прийнято!");
+        await editMessageText(cbChatId, cbMessageId, "✅ Всі ліки прийнято!");
+
+      } else if (cbData?.startsWith("take_")) {
+        const medId = cbData.slice(5);
+        const med = await prisma.medication.findUnique({ where: { id: medId } });
+        if (med && !med.isTaken) {
+          await prisma.medication.update({ where: { id: medId }, data: { isTaken: true, takenAt: new Date() } });
+        }
+        await answerCallbackQuery(callbackQuery.id, `✅ ${med?.name ?? "Відмічено"}!`);
+
+        // Прибрати кнопку з клавіатури
+        const currentKeyboard = callbackQuery.message.reply_markup?.inline_keyboard as { text: string; callback_data: string }[][] | undefined;
+        const remaining = (currentKeyboard ?? [])
+          .flat()
+          .filter((btn) => btn.callback_data !== cbData && btn.callback_data !== "take_all");
+
+        if (remaining.length === 0) {
+          await editMessageText(cbChatId, cbMessageId, "✅ Всі ліки прийнято!");
+        } else {
+          const newKeyboard = [
+            ...remaining.map((btn) => [btn]),
+            [{ text: "✓ Прийняти всі", callback_data: "take_all" }],
+          ];
+          await editMessageReplyMarkup(cbChatId, cbMessageId, newKeyboard);
+        }
+      }
+
+      return NextResponse.json({ ok: true });
+    }
+
     if (!message || !message.text) {
       return NextResponse.json({ ok: true });
     }
@@ -14,10 +118,6 @@ export async function POST(req: NextRequest) {
     const telegramId = String(message.from.id);
     const text = message.text.trim();
     const chatId = message.chat.id;
-
-    // Токен бота для отправки ответов
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    if (!botToken) return NextResponse.json({ ok: true });
 
     const sendMessage = async (msg: string) => {
       await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
