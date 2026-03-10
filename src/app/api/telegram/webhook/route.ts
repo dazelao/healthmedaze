@@ -82,13 +82,17 @@ export async function POST(req: NextRequest) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Визначити поточний часовий слот (UTC+2, Київ)
-      const kyivHour = (new Date().getUTCHours() + 2) % 24;
-      let currentTimeOfDay: string;
-      if (kyivHour >= 7 && kyivHour < 11) currentTimeOfDay = "morning";
-      else if (kyivHour >= 11 && kyivHour < 16) currentTimeOfDay = "noon";
-      else if (kyivHour >= 18 && kyivHour < 23) currentTimeOfDay = "evening";
-      else currentTimeOfDay = "any"; // поза вікнами — відмічати всі
+      // Поточний час у Києві (UTC+2)
+      const nowUtc = new Date();
+      const kyivHour = (nowUtc.getUTCHours() + 2) % 24;
+      const kyivMin = nowUtc.getUTCMinutes();
+      const kyivTotalMin = kyivHour * 60 + kyivMin;
+
+      // Слоти, час яких вже настав
+      const passedSlots: string[] = [];
+      if (kyivHour >= 7) passedSlots.push("morning");
+      if (kyivHour >= 11) passedSlots.push("noon");
+      if (kyivHour >= 18) passedSlots.push("evening");
 
       const allNotTaken: { id: string; name: string; dosage: string | null }[] = [];
 
@@ -100,9 +104,16 @@ export async function POST(req: NextRequest) {
           return dayDate.getTime() === today.getTime();
         });
         if (!todayDay) continue;
-        const pending = todayDay.medications.filter(
-          (m) => !m.isTaken && (currentTimeOfDay === "any" || m.timeOfDay === currentTimeOfDay)
-        );
+        const pending = todayDay.medications.filter((m) => {
+          if (m.isTaken) return false;
+          if (m.timeOfDay === "custom") {
+            // custom — включати якщо час вже настав або не вказано
+            if (!m.customTime) return true;
+            const [h, min] = m.customTime.split(":").map(Number);
+            return h * 60 + (min || 0) <= kyivTotalMin;
+          }
+          return passedSlots.includes(m.timeOfDay);
+        });
         allNotTaken.push(...pending);
       }
 

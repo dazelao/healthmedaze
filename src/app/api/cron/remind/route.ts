@@ -47,9 +47,22 @@ async function runReminders(forcedTimeOfDay?: string) {
 
     if (!todayDay) continue;
 
-    const pendingMeds = todayDay.medications.filter(
-      (m) => !m.isTaken && m.timeOfDay === currentTimeOfDay
-    );
+    // Поточний час у хвилинах (UTC+2)
+    const nowUtc = new Date();
+    const kyivMin = nowUtc.getUTCMinutes();
+    const kyivTotalMin = kyivHour * 60 + kyivMin;
+
+    const pendingMeds = todayDay.medications.filter((m) => {
+      if (m.isTaken) return false;
+      if (m.timeOfDay === "custom") {
+        if (!m.customTime) return false; // без часу — не нагадувати
+        const [h, min] = m.customTime.split(":").map(Number);
+        const medMin = h * 60 + (min || 0);
+        // Включити якщо час настав (±30 хв вікно)
+        return medMin >= kyivTotalMin - 30 && medMin <= kyivTotalMin + 30;
+      }
+      return m.timeOfDay === currentTimeOfDay;
+    });
 
     if (pendingMeds.length === 0) continue;
 
