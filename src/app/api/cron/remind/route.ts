@@ -52,33 +52,32 @@ async function runReminders(forcedTimeOfDay?: string) {
     const kyivMin = nowUtc.getUTCMinutes();
     const kyivTotalMin = kyivHour * 60 + kyivMin;
 
+    // Всі слоти, що вже почалися
+    const passedSlots: string[] = [];
+    if (kyivHour >= 7) passedSlots.push("morning");
+    if (kyivHour >= 11) passedSlots.push("noon");
+    if (kyivHour >= 18) passedSlots.push("evening");
+
     const pendingMeds = todayDay.medications.filter((m) => {
       if (m.isTaken) return false;
       if (m.timeOfDay === "custom") {
-        if (!m.customTime) return false; // без часу — не нагадувати
+        if (!m.customTime) return false;
         const [h, min] = m.customTime.split(":").map(Number);
         const medMin = h * 60 + (min || 0);
-        // Включити якщо час настав (±30 хв вікно)
-        return medMin >= kyivTotalMin - 30 && medMin <= kyivTotalMin + 30;
+        // Включити якщо час вже настав (+ 30 хв буфер для наступних)
+        return medMin <= kyivTotalMin + 30;
       }
-      return m.timeOfDay === currentTimeOfDay;
+      return passedSlots.includes(m.timeOfDay);
     });
 
     if (pendingMeds.length === 0) continue;
-
-    const timeLabel =
-      currentTimeOfDay === "morning"
-        ? "Ранкові"
-        : currentTimeOfDay === "noon"
-          ? "Денні"
-          : "Вечірні";
 
     const medList = pendingMeds
       .map((m) => `• ${m.name}${m.dosage ? ` (${m.dosage})` : ""}`)
       .join("\n");
 
     const text =
-      `💊 <b>Нагадування!</b> ${timeLabel} ліки — День ${todayDay.dayNumber}:\n\n` +
+      `💊 <b>Нагадування!</b> Ліки — День ${todayDay.dayNumber}:\n\n` +
       `${medList}`;
 
     const keyboard = [
