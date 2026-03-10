@@ -44,44 +44,20 @@ export async function POST(req: NextRequest) {
       const cbTelegramId = String(callbackQuery.from.id);
 
       if (cbData === "take_all") {
-        // Відмітити всі ліки поточного слоту (та прострочених)
-        const sheets = await prisma.sheet.findMany({
-          where: { telegramId: cbTelegramId },
-          include: { days: { include: { medications: true }, orderBy: { dayNumber: "asc" } } },
-        });
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const nowUtc = new Date();
-        const kyivHour = (nowUtc.getUTCHours() + 2) % 24;
-        const kyivTotalMin = kyivHour * 60 + nowUtc.getUTCMinutes();
+        // Читаємо IDs прямо з кнопок повідомлення — тільки те що показано
+        const cbKeyboard = callbackQuery.message.reply_markup?.inline_keyboard as
+          { text: string; callback_data: string }[][] | undefined;
 
-        let cbSlot: string;
-        if (kyivHour >= 7 && kyivHour < 11) cbSlot = "morning";
-        else if (kyivHour >= 11 && kyivHour < 18) cbSlot = "noon";
-        else if (kyivHour >= 18 && kyivHour < 23) cbSlot = "evening";
-        else cbSlot = "any";
+        const medIds = (cbKeyboard ?? [])
+          .flat()
+          .filter((btn) => btn.callback_data.startsWith("take_"))
+          .map((btn) => btn.callback_data.slice(5));
 
-        const ids: string[] = [];
-        for (const sheet of sheets) {
-          const todayDay = sheet.days.find((d) => {
-            if (!d.date) return false;
-            const dd = new Date(d.date); dd.setHours(0, 0, 0, 0);
-            return dd.getTime() === today.getTime();
+        if (medIds.length > 0) {
+          await prisma.medication.updateMany({
+            where: { id: { in: medIds } },
+            data: { isTaken: true, takenAt: new Date() },
           });
-          if (!todayDay) continue;
-          todayDay.medications.forEach((m) => {
-            if (m.isTaken) return;
-            if (m.timeOfDay === "custom") {
-              if (!m.customTime) { if (cbSlot === "any") ids.push(m.id); return; }
-              const [h, min] = m.customTime.split(":").map(Number);
-              const medMin = h * 60 + (min || 0);
-              if (medMin >= kyivTotalMin - 30 && medMin <= kyivTotalMin + 30) ids.push(m.id);
-            } else if (cbSlot === "any" || m.timeOfDay === cbSlot) {
-              ids.push(m.id);
-            }
-          });
-        }
-        if (ids.length > 0) {
-          await prisma.medication.updateMany({ where: { id: { in: ids } }, data: { isTaken: true, takenAt: new Date() } });
         }
         await answerCallbackQuery(callbackQuery.id, "✅ Всі прийнято!");
         await editMessageText(cbChatId, cbMessageId, "✅ Всі ліки прийнято!");
