@@ -82,6 +82,14 @@ export async function POST(req: NextRequest) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
+      // Визначити поточний часовий слот (UTC+2, Київ)
+      const kyivHour = (new Date().getUTCHours() + 2) % 24;
+      let currentTimeOfDay: string;
+      if (kyivHour >= 7 && kyivHour < 11) currentTimeOfDay = "morning";
+      else if (kyivHour >= 11 && kyivHour < 16) currentTimeOfDay = "noon";
+      else if (kyivHour >= 18 && kyivHour < 23) currentTimeOfDay = "evening";
+      else currentTimeOfDay = "any"; // поза вікнами — відмічати всі
+
       const allNotTaken: { id: string; name: string; dosage: string | null }[] = [];
 
       for (const sheet of sheets) {
@@ -92,7 +100,9 @@ export async function POST(req: NextRequest) {
           return dayDate.getTime() === today.getTime();
         });
         if (!todayDay) continue;
-        const pending = todayDay.medications.filter((m) => !m.isTaken);
+        const pending = todayDay.medications.filter(
+          (m) => !m.isTaken && (currentTimeOfDay === "any" || m.timeOfDay === currentTimeOfDay)
+        );
         allNotTaken.push(...pending);
       }
 
